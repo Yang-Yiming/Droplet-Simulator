@@ -4,11 +4,13 @@ export class DirectionIndicator {
   targetPosition: Vector2;
   type: string;
   distance: number;
+  size: number;
 
-  constructor(targetX: number, targetY: number, type: string, distance: number) {
+  constructor(targetX: number, targetY: number, type: string, distance: number, size: number) {
     this.targetPosition = new Vector2(targetX, targetY);
     this.type = type;
     this.distance = distance;
+    this.size = size;
   }
 
   draw(ctx: CanvasRenderingContext2D, shipPosition: Vector2, camera: Vector2, canvasWidth: number, canvasHeight: number) {
@@ -76,15 +78,27 @@ export class DirectionIndicator {
       ctx.fillText(distanceText, shaftEndX, shaftEndY - 15);
     }
 
-    // Draw target type icon
+    // Draw target type icon with size-based scaling
+    const iconSize = Math.min(5 + this.size / 100, 20); // Size from 5 to 20 based on object size
     if (this.type === 'asteroid') {
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(arrowX, arrowY, 5, 0, Math.PI * 2);
+      ctx.arc(arrowX, arrowY, iconSize, 0, Math.PI * 2);
       ctx.fill();
-    } else if (this.type === 'starship') {
+    } else if (this.type === 'starship' || this.type === 'megaship') {
       ctx.fillStyle = color;
-      ctx.fillRect(arrowX - 6, arrowY - 3, 12, 6);
+      ctx.fillRect(arrowX - iconSize, arrowY - iconSize / 2, iconSize * 2, iconSize);
+    } else if (this.type === 'megaplanet') {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(arrowX, arrowY, iconSize, 0, Math.PI * 2);
+      ctx.fill();
+      // Add ring for planets
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(arrowX, arrowY, iconSize + 3, 0, Math.PI * 2);
+      ctx.stroke();
     }
   }
 }

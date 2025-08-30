@@ -96,30 +96,7 @@ export class Ship {
   }
 
   draw(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    // Gear shift indicator: yellow glow
-    if (this.flashing) {
-      ctx.shadowColor = '#ffff00';
-      ctx.shadowBlur = 15;
-      ctx.strokeStyle = '#ffff00';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(x, y, 15, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
-
-    if (this.isDropletMode) {
-      // 水滴模式特效：发光轮廓
-      ctx.shadowColor = '#00ff00';
-      ctx.shadowBlur = 20;
-      ctx.strokeStyle = '#00ff00';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(x, y, 12, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
-
+    // 简单的绿色圆点飞船
     ctx.fillStyle = '#00ff00';
     ctx.beginPath();
     ctx.arc(x, y, 10, 0, Math.PI * 2);

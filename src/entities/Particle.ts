@@ -39,25 +39,22 @@ export class Particle {
     ctx.fillStyle = this.color;
 
     if (this.type === 'spark') {
-      // Draw spark as a small glowing circle
-      ctx.shadowColor = this.color;
-      ctx.shadowBlur = 5;
+      // 简单的圆形火花
       ctx.beginPath();
       ctx.arc(x, y, this.size * 0.5, 0, Math.PI * 2);
       ctx.fill();
-      ctx.shadowBlur = 0;
     } else if (this.type === 'debris') {
-      // Draw debris as irregular shapes
+      // 简单的矩形碎片
       ctx.fillRect(x - this.size * 0.5, y - this.size * 0.5, this.size, this.size);
     } else if (this.type === 'shockwave') {
-      // Draw shockwave as expanding ring
+      // 简单的圆形冲击波
       ctx.strokeStyle = this.color;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(x, y, this.size * (1 - alpha) * 10, 0, Math.PI * 2);
       ctx.stroke();
     } else {
-      // Normal particles
+      // 简单的矩形粒子
       ctx.fillRect(x - this.size * 0.5, y - this.size * 0.5, this.size, this.size);
     }
 
