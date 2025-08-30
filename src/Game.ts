@@ -99,10 +99,26 @@ export class Game {
 
     this.ship.update(deltaTime, this.keys);
 
-    // Update camera to smoothly follow ship
-    const lerpFactor = 0.05; // 跟随速度
-    this.camera.x += (this.ship.position.x - this.camera.x) * lerpFactor;
-    this.camera.y += (this.ship.position.y - this.camera.y) * lerpFactor;
+    // Update camera to smoothly follow ship with catch-up
+    const baseLerpFactor = 0.05; // 基础跟随速度
+    const shipSpeed = this.ship.velocity.length();
+    // 根据飞船速度动态调整跟随速度，速度越快跟随越快
+    const lerpFactor = Math.min(baseLerpFactor + shipSpeed / 10000, 0.3); // 最大跟随速度0.3
+    const maxDistance = Math.max(500, shipSpeed * 0.5); // 根据速度调整最大距离，防止跟丢
+    const distanceToShip = Math.sqrt(
+      (this.ship.position.x - this.camera.x) ** 2 +
+      (this.ship.position.y - this.camera.y) ** 2
+    );
+
+    if (distanceToShip > maxDistance) {
+      // 如果距离太大，瞬间移动摄像头
+      this.camera.x = this.ship.position.x;
+      this.camera.y = this.ship.position.y;
+    } else {
+      // 平滑跟随
+      this.camera.x += (this.ship.position.x - this.camera.x) * lerpFactor;
+      this.camera.y += (this.ship.position.y - this.camera.y) * lerpFactor;
+    }
 
     // Generate new regions as camera moves
     this.generateNearbyRegions();
@@ -187,7 +203,7 @@ export class Game {
     });
 
     // Update UI
-    this.speedDisplay.textContent = `Speed: ${this.ship.velocity.length().toFixed(1)}`;
+    this.speedDisplay.textContent = `Speed: ${this.ship.velocity.length().toFixed(1)} | Gear: ${this.ship.gear}`;
     this.objectsDisplay.textContent = `Objects: ${this.objects.length}`;
   }
 
