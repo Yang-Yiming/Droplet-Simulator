@@ -6,6 +6,8 @@ export class SpaceObject {
   size: number;
   color: string;
   type: string;
+  isEntered: boolean = false; // 是否被飞船进入过碰撞箱
+  explosionTimer: number = 0; // 爆炸定时器
 
   constructor(x: number, y: number, vx: number, vy: number, size: number, color: string, type: string) {
     this.position = new Vector2(x, y);
