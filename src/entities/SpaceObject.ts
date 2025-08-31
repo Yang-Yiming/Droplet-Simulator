@@ -21,15 +21,15 @@ export class SpaceObject {
     this.position = this.position.add(this.velocity.multiply(deltaTime));
   }
 
-  draw(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  draw(ctx: CanvasRenderingContext2D, x: number, y: number, zoom: number = 1) {
     ctx.fillStyle = this.color;
     if (this.type === 'starship') {
       // Draw as rectangle for starship
-      ctx.fillRect(x - this.size / 2, y - this.size / 4, this.size, this.size / 2);
+      ctx.fillRect(x - (this.size * zoom) / 2, y - (this.size * zoom) / 4, this.size * zoom, (this.size * zoom) / 2);
     } else {
       // Draw as circle for planet and asteroid
       ctx.beginPath();
-      ctx.arc(x, y, this.size, 0, Math.PI * 2);
+      ctx.arc(x, y, this.size * zoom, 0, Math.PI * 2);
       ctx.fill();
     }
   }

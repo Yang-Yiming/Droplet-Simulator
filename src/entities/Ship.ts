@@ -95,11 +95,59 @@ export class Ship {
     this.acceleration = this.acceleration.add(force);
   }
 
-  draw(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    // 简单的绿色圆点飞船
-    ctx.fillStyle = '#00ff00';
-    ctx.beginPath();
-    ctx.arc(x, y, 10, 0, Math.PI * 2);
-    ctx.fill();
+  draw(ctx: CanvasRenderingContext2D, x: number, y: number, zoom: number = 1) {
+    ctx.save();
+    
+    // 飞船始终是圆形
+    const baseRadius = 10 * zoom;
+    
+    // 水滴模式时的发光效果
+    if (this.isDropletMode) {
+      // 外圈发光效果
+      const glowRadius = baseRadius + 5 * zoom + Math.sin(this.dropletTimer * 20) * 2 * zoom; // 动态发光
+      const gradient = ctx.createRadialGradient(x, y, baseRadius, x, y, glowRadius);
+      gradient.addColorStop(0, 'rgba(0, 136, 255, 0.8)');
+      gradient.addColorStop(0.7, 'rgba(0, 136, 255, 0.3)');
+      gradient.addColorStop(1, 'rgba(0, 136, 255, 0)');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 内圈飞船本体
+      ctx.fillStyle = '#00ff00';
+      ctx.beginPath();
+      ctx.arc(x, y, baseRadius, 0, Math.PI * 2);
+      ctx.fill();
+      
+    } else if (this.flashing) {
+      // 换挡时的黄光效果
+      const yellowGlowRadius = baseRadius + 8 * zoom;
+      const yellowGradient = ctx.createRadialGradient(x, y, baseRadius, x, y, yellowGlowRadius);
+      yellowGradient.addColorStop(0, 'rgba(255, 255, 0, 0.6)');
+      yellowGradient.addColorStop(0.8, 'rgba(255, 255, 0, 0.2)');
+      yellowGradient.addColorStop(1, 'rgba(255, 255, 0, 0)');
+      
+      ctx.fillStyle = yellowGradient;
+      ctx.beginPath();
+      ctx.arc(x, y, yellowGlowRadius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 内圈飞船本体
+      ctx.fillStyle = '#00ff00';
+      ctx.beginPath();
+      ctx.arc(x, y, baseRadius, 0, Math.PI * 2);
+      ctx.fill();
+      
+    } else {
+      // 正常状态：绿色圆形飞船
+      ctx.fillStyle = '#00ff00';
+      ctx.beginPath();
+      ctx.arc(x, y, baseRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    ctx.restore();
   }
 }

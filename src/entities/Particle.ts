@@ -33,7 +33,7 @@ export class Particle {
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  draw(ctx: CanvasRenderingContext2D, x: number, y: number, zoom: number = 1) {
     const alpha = this.life / this.maxLife;
     ctx.globalAlpha = alpha;
     ctx.fillStyle = this.color;
@@ -41,21 +41,29 @@ export class Particle {
     if (this.type === 'spark') {
       // 简单的圆形火花
       ctx.beginPath();
-      ctx.arc(x, y, this.size * 0.5, 0, Math.PI * 2);
+      ctx.arc(x, y, this.size * 0.5 * zoom, 0, Math.PI * 2);
       ctx.fill();
     } else if (this.type === 'debris') {
       // 简单的矩形碎片
-      ctx.fillRect(x - this.size * 0.5, y - this.size * 0.5, this.size, this.size);
+      ctx.fillRect(x - (this.size * 0.5 * zoom), y - (this.size * 0.5 * zoom), this.size * zoom, this.size * zoom);
     } else if (this.type === 'shockwave') {
-      // 简单的圆形冲击波
-      ctx.strokeStyle = this.color;
-      ctx.lineWidth = 2;
+      // 增强的冲击波效果 - 更震撼
+      const waveAlpha = alpha * 0.8;
+      ctx.strokeStyle = `rgba(255, 255, 255, ${waveAlpha})`;
+      ctx.lineWidth = (4 + (1 - alpha) * 8) * zoom; // 线条随时间变粗
       ctx.beginPath();
-      ctx.arc(x, y, this.size * (1 - alpha) * 10, 0, Math.PI * 2);
+      ctx.arc(x, y, this.size * (1 - alpha) * 15 * zoom, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // 添加内圈光晕
+      ctx.strokeStyle = `rgba(255, 200, 100, ${waveAlpha * 0.6})`;
+      ctx.lineWidth = (2 + (1 - alpha) * 4) * zoom;
+      ctx.beginPath();
+      ctx.arc(x, y, this.size * (1 - alpha) * 12 * zoom, 0, Math.PI * 2);
       ctx.stroke();
     } else {
       // 简单的矩形粒子
-      ctx.fillRect(x - this.size * 0.5, y - this.size * 0.5, this.size, this.size);
+      ctx.fillRect(x - (this.size * 0.5 * zoom), y - (this.size * 0.5 * zoom), this.size * zoom, this.size * zoom);
     }
 
     ctx.globalAlpha = 1;

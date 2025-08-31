@@ -67,13 +67,13 @@ export class Megastructure extends SpaceObject {
     this.fragments = this.fragments.filter(fragment => fragment.life > 0);
   }
 
-  draw(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  draw(ctx: CanvasRenderingContext2D, x: number, y: number, zoom: number = 1) {
     if (this.isDestroyed) {
       // 绘制碎片
       this.fragments.forEach(fragment => {
         const relX = fragment.position.x - this.position.x + x;
         const relY = fragment.position.y - this.position.y + y;
-        fragment.draw(ctx, relX, relY);
+        fragment.draw(ctx, relX, relY, zoom);
       });
     } else {
       // 分块渲染优化 - 只渲染可见部分
@@ -83,7 +83,7 @@ export class Megastructure extends SpaceObject {
         tempCanvas.width = this.canvas.width;
         tempCanvas.height = this.canvas.height;
         tempCtx.putImageData(this.imageData, 0, 0);
-        ctx.drawImage(tempCanvas, x - this.canvas.width / 2, y - this.canvas.height / 2);
+        ctx.drawImage(tempCanvas, x - (this.canvas.width * zoom) / 2, y - (this.canvas.height * zoom) / 2, this.canvas.width * zoom, this.canvas.height * zoom);
       }
     }
   }
@@ -151,38 +151,121 @@ export class Megastructure extends SpaceObject {
     if (this.isDestroyed) return;
 
     this.isDestroyed = true;
-    
-    // 创建大规模爆炸粒子
+
+    // 触发超强屏幕震动
+    const shakeIntensity = Math.min(this.size / 5, 100);
+    const shakeDuration = Math.min(this.size / 200, 2.0);
+    game.triggerScreenShake(shakeIntensity, shakeDuration);
+
+    // 创建超大规模爆炸粒子 - 真正的行星级毁灭
     const explosionX = this.position.x;
     const explosionY = this.position.y;
-    const particleCount = Math.min(this.size, 500);
-    
-    for (let i = 0; i < particleCount; i++) {
-      const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.5;
-      const speed = Math.random() * 600 + 300;
+    const baseParticleCount = Math.min(this.size * 4, 5000); // 极大增加粒子数量
+
+    // 第一阶段：核心爆炸 - 超高密度粒子云
+    for (let i = 0; i < baseParticleCount; i++) {
+      const angle = (Math.PI * 2 * i) / baseParticleCount + Math.random() * 0.3;
+      const speed = Math.random() * 2000 + 1000; // 极高速度
       const vx = Math.cos(angle) * speed;
       const vy = Math.sin(angle) * speed;
-      const life = Math.random() * 4 + 3;
-      const colors = ['#ff3300', '#ff6600', '#ffaa00', '#ffff00', '#ffffff'];
+      const life = Math.random() * 12 + 8; // 超长生命周期
+      const colors = ['#ff3300', '#ff6600', '#ffaa00', '#ffff00', '#ffffff', '#ff0088', '#8800ff', '#ff4400', '#ff8800', '#ffcc00'];
       const color = colors[Math.floor(Math.random() * colors.length)];
-      const particleSize = Math.random() * 8 + 3;
+      const particleSize = Math.random() * 30 + 10; // 巨大粒子
+
+      const types = ['normal', 'spark', 'debris'];
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      game.particles.push(new Particle(explosionX, explosionY, vx, vy, life, color, particleSize, type));
+    }
+
+    // 第二阶段：外围爆炸 - 更大更稀疏的粒子
+    for (let i = 0; i < baseParticleCount / 2; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 1500 + 500;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+      const life = Math.random() * 15 + 10;
+      const colors = ['#ff2200', '#ff5500', '#ff9900', '#ffdd00', '#ffffff', '#ff0066'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const particleSize = Math.random() * 25 + 15;
+
+      game.particles.push(new Particle(explosionX, explosionY, vx, vy, life, color, particleSize, 'debris'));
+    }
+
+    // 第三阶段：巨型火球效果 - 缓慢移动的毁灭火球
+    for (let i = 0; i < 50; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 200 + 100;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+      const life = Math.random() * 20 + 15;
+      const color = '#ff6600';
+      const particleSize = Math.random() * 50 + 30;
+
       game.particles.push(new Particle(explosionX, explosionY, vx, vy, life, color, particleSize, 'normal'));
     }
 
-    // 创建碎片
-    for (let i = 0; i < 20; i++) {
+    // 多重毁灭性冲击波 - 真正的冲击感
+    for (let wave = 0; wave < 12; wave++) {
+      const delay = wave * 0.08;
+      setTimeout(() => {
+        const shockwaveSize = (this.size / 8) * (1 + wave * 0.5);
+        const shockwave = new Particle(explosionX, explosionY, 0, 0, 4, '#ffffff', shockwaveSize, 'shockwave');
+        game.particles.push(shockwave);
+      }, delay * 1000);
+    }
+
+    // 增强火花风暴 - 密集的金色火花
+    for (let i = 0; i < 300; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * this.size;
+      const speed = Math.random() * 800 + 400;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+      const spark = new Particle(explosionX, explosionY, vx, vy, Math.random() * 4 + 3, '#ffff88', 6, 'spark');
+      game.particles.push(spark);
+    }
+
+    // 大型碎片风暴 - 行星碎片
+    for (let i = 0; i < 100; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = Math.random() * this.size * 1.2;
       const fragmentX = explosionX + Math.cos(angle) * distance;
       const fragmentY = explosionY + Math.sin(angle) * distance;
       const fragment = new MegastructureFragment(
         fragmentX, fragmentY,
-        Math.cos(angle) * 300 + (Math.random() - 0.5) * 100,
-        Math.sin(angle) * 300 + (Math.random() - 0.5) * 100,
+        Math.cos(angle) * 800 + (Math.random() - 0.5) * 400,
+        Math.sin(angle) * 800 + (Math.random() - 0.5) * 400,
         this.color,
-        Math.random() * 3 + 2
+        Math.random() * 10 + 8
       );
       this.fragments.push(fragment);
+    }
+
+    // 浓密烟雾云 - 爆炸后的烟雾弥漫
+    for (let i = 0; i < 200; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 80 + 30;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+      const smoke = new Particle(explosionX, explosionY, vx, vy, Math.random() * 25 + 20, '#444444', Math.random() * 40 + 20, 'normal');
+      game.particles.push(smoke);
+    }
+
+    // 瞬间闪光效果 - 爆炸的亮光
+    for (let i = 0; i < 20; i++) {
+      const flash = new Particle(explosionX, explosionY, 0, 0, 0.5, '#ffffff', this.size * 3, 'normal');
+      game.particles.push(flash);
+    }
+
+    // 残余火花 - 持续的余烬
+    for (let i = 0; i < 150; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 150 + 50;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+      const ember = new Particle(explosionX, explosionY, vx, vy, Math.random() * 8 + 5, '#ff3300', 3, 'spark');
+      game.particles.push(ember);
     }
   }
 
@@ -226,14 +309,14 @@ class MegastructureFragment {
     this.velocity = this.velocity.multiply(0.98); // 空气阻力
   }
 
-  draw(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  draw(ctx: CanvasRenderingContext2D, x: number, y: number, zoom: number = 1) {
     const alpha = this.life / this.maxLife;
     ctx.globalAlpha = alpha;
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(this.rotation);
     ctx.fillStyle = this.color;
-    ctx.fillRect(-8, -8, 16, 16); // 旋转的碎片
+    ctx.fillRect(-8 * zoom, -8 * zoom, 16 * zoom, 16 * zoom); // 旋转的碎片
     ctx.restore();
     ctx.globalAlpha = 1;
   }
