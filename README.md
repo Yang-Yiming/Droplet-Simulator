@@ -1,20 +1,25 @@
 # Space Explorer
 
-A thrilling space exploration game built with TypeScript and HTML5 Canvas. Pilot your invincible spaceship through an infinite universe filled with planets, asteroids, and other celestial objects. Experience smooth gameplay with dynamic particle effects and a modern, minimalist UI.
+Just-for-fun game mostly written by LLM.
 
-## Features
+A droplet simulator that could destory everything.
 
-- **Infinite Universe**: Explore a vast, procedurally generated cosmos
-- **Invincible Ship**: Pass through all objects like a water droplet from Three-Body Problem
-- **Smooth Controls**: Use WASD or arrow keys for precise movement
-- **Dynamic Effects**: Particle trails and visual effects for an immersive experience
-- **Modern UI**: Clean, minimalist interface displaying speed and object count
+---
+
+TODO
+
+- [ ] Implement particle system with Rust and Wasm to make it run faster.
+- [ ] Enhance algorithm for better performance.
+- [ ] Build high performance physic system that could simulate pixel-level physics with fast speed.
+- [ ] Add `Wonder` mechanism that could offer tons of arranged starships and stars to crash into.
 
 ## How to Play
 
-1. Use WASD or arrow keys to control your spaceship
-2. Navigate through the universe and encounter various space objects
-3. Enjoy the infinite exploration without any obstacles
+1. Use `WASD` to control your spaceship.
+2. Use `shift` to enable strike, and boost.
+3. Press `j` when yellow light occurs to change gear.
+4. Press `k` to call out a navigator that show where things are.
+5. Press `z` and `x` to change the view size.
 
 ## Development
 
