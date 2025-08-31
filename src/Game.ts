@@ -25,6 +25,10 @@ export class Game {
   screenShakeIntensity: number = 0;
   screenShakeDuration: number = 0;
 
+  // PID控制变量
+  lastAngleError: number = 0;
+  integralError: number = 0;
+
   constructor() {
     this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
     this.ctx = this.canvas.getContext('2d')!;
@@ -80,8 +84,8 @@ export class Game {
       this.objects.push(new SpaceObject(x, y, vx, vy, size, color, 'asteroid'));
     }
 
-    // Randomly generate megastructures (1% chance per region)
-    if (Math.random() < 0.01) {
+    // Randomly generate megastructures (5% chance per region)
+    if (Math.random() < 0.05) {
       const x = centerX + Math.random() * width - width / 2;
       const y = centerY + Math.random() * height - height / 2;
       const vx = (Math.random() - 0.5) * 20;
@@ -131,6 +135,11 @@ export class Game {
     }
 
     this.ship.update(deltaTime, this.keys);
+
+    // Handle auto-aiming when Shift is pressed
+    if (this.keys['ShiftLeft'] || this.keys['ShiftRight']) {
+      this.handleAutoAiming();
+    }
 
     // Update camera to smoothly follow ship with catch-up
     const baseLerpFactor = 0.05; // 基础跟随速度
@@ -340,12 +349,118 @@ export class Game {
     }
   }
 
-  zoomOut() {
-    this.zoom = Math.max(this.zoom * 0.9, 0.01);
+  handleAutoAiming() {
+    const aimRange = 2500; // 大幅扩大瞄准范围到2500
+    let closestObject: SpaceObject | null = null;
+    let closestDistance = aimRange;
+
+    // 找到最近的物体
+    for (const obj of this.objects) {
+      const dx = obj.position.x - this.ship.position.x;
+      const dy = obj.position.y - this.ship.position.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < closestDistance && distance > 15) { // 降低最小距离到15
+        closestDistance = distance;
+        closestObject = obj;
+      }
+    }
+
+    if (closestObject !== null) {
+      // 计算目标向量
+      const targetVector = new Vector2(
+        closestObject.position.x - this.ship.position.x,
+        closestObject.position.y - this.ship.position.y
+      );
+
+      const targetLength = targetVector.length();
+      if (targetLength > 0) {
+        // 增强版阻尼弹簧算法 - 更激进的参数
+        const baseSpringConstant = 1.2; // 增强基础弹簧常数
+        const baseDampingCoefficient = 0.4; // 降低基础阻尼，让力更强
+        const baseMaxForce = 800; // 大幅增加基础最大力
+
+        // 自适应参数调整 - 更激进
+        const currentSpeed = this.ship.velocity.length();
+
+        // 速度适应 - 高速时大幅增强吸引力
+        const speedFactor = Math.max(0.5, Math.min(4.0, currentSpeed / 150)); // 最高4倍
+        const adaptiveSpring = baseSpringConstant * speedFactor; // 高速时弹性增强
+        const adaptiveDamping = baseDampingCoefficient * (2.0 - speedFactor * 0.5); // 高速时阻尼适中
+
+        // 距离适应 - 近距离时力大幅增强
+        const distanceFactor = Math.max(1.0, Math.min(5.0, 1000 / targetLength)); // 最高5倍
+        const adaptiveMaxForce = baseMaxForce * distanceFactor;
+
+        // 大小适应 - 小物体获得极强引导
+        const sizeFactor = Math.max(1.0, Math.min(6.0, 100 / closestObject.size)); // 最高6倍！
+        const finalMaxForce = adaptiveMaxForce * sizeFactor;
+
+        // 计算弹簧力 (胡克定律: F = -k * x) - 增强版
+        const springForce = targetVector.multiply(-adaptiveSpring);
+
+        // 计算阻尼力 (粘性阻尼: F = -b * v) - 适中阻尼
+        const dampingForce = this.ship.velocity.multiply(-adaptiveDamping);
+
+        // 合力
+        const totalForce = springForce.add(dampingForce);
+
+        // 增强力限制和应用
+        const forceMagnitude = totalForce.length();
+        if (forceMagnitude > finalMaxForce) {
+          const normalizedForce = new Vector2(
+            totalForce.x / forceMagnitude,
+            totalForce.y / forceMagnitude
+          );
+          const smoothedForce = normalizedForce.multiply(finalMaxForce);
+          this.ship.applyForce(smoothedForce);
+        } else {
+          // 小力时直接应用
+          this.ship.applyForce(totalForce);
+        }
+
+        // 增强预测性调整 - 更早更强的引导
+        if (currentSpeed > 50) {
+          const normalizedVelocity = new Vector2(
+            this.ship.velocity.x / currentSpeed,
+            this.ship.velocity.y / currentSpeed
+          );
+          const normalizedTarget = new Vector2(
+            targetVector.x / targetLength,
+            targetVector.y / targetLength
+          );
+
+          const dotProduct = Math.max(-1, Math.min(1,
+            normalizedTarget.x * normalizedVelocity.x + normalizedTarget.y * normalizedVelocity.y
+          ));
+
+          // 降低角度阈值，更早开始引导
+          if (dotProduct < 0.85) { // 大约32度以上就开始引导
+            const predictionStrength = (1 - dotProduct) * 0.5 * finalMaxForce; // 增强预测力
+            const predictionForce = normalizedTarget.multiply(predictionStrength);
+            this.ship.applyForce(predictionForce);
+          }
+        }
+
+        // 额外增强 - 为小物体添加特殊引导力
+        if (closestObject.size < 30) { // 小于30的物体获得额外增强
+          const normalizedTargetExtra = new Vector2(
+            targetVector.x / targetLength,
+            targetVector.y / targetLength
+          );
+          const extraForce = normalizedTargetExtra.multiply(200 * speedFactor);
+          this.ship.applyForce(extraForce);
+        }
+      }
+    }
   }
 
   zoomIn() {
     this.zoom = Math.min(this.zoom * 1.1, 1.0);
+  }
+
+  zoomOut() {
+    this.zoom = Math.max(this.zoom * 0.9, 0.01);
   }
 
   draw() {
